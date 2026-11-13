@@ -110,3 +110,6 @@ func retryable(err error, replaySafe bool) bool {
 	}
 	return false
 }
+
+// asAPIError is the package's errors.As shorthand for *Error.
+func asAPIError(err error, target **Error) bool { return errors.As(err, target) }

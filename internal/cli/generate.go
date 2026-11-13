@@ -183,8 +183,8 @@ func hasVideoInput(fields []mediaField, body map[string]any) bool {
 	return false
 }
 
-// carriesURL reports whether v is a URL or asset reference, or a list
-// containing one.
+// carriesURL reports whether v is a URL reference, or a list containing
+// one.
 func carriesURL(v any) bool {
 	switch x := v.(type) {
 	case string:

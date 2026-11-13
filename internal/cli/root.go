@@ -214,7 +214,6 @@ Exit codes:
 		a.newGenerateCmd(flags, api.KindVideo),
 		a.newJobCmd(flags),
 		a.newUploadCmd(flags),
-		a.newAssetsCmd(flags),
 		a.newBalanceCmd(flags),
 		a.newConfigCmd(flags),
 		a.newVersionCmd(flags),

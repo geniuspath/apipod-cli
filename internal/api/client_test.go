@@ -208,15 +208,15 @@ func TestNonIdempotentPostIsOnlyRetriedOn429(t *testing.T) {
 					tc.fail(t, w)
 					return
 				}
-				writeData(w, `{"assetId":"a1","status":"PROCESSING"}`)
+				writeData(w, `{}`)
 			})
-			_, _ = rec.client(staticToken("Bearer k")).CreateAsset(context.Background(), CreateAssetRequest{AssetType: "Image", URL: "https://x/y.png"})
+			_ = rec.client(staticToken("Bearer k")).do(context.Background(), call{method: http.MethodPost, path: "/v1/none"}, nil)
 			reqs := rec.all()
 			if len(reqs) != tc.want {
 				t.Errorf("%d requests, want %d", len(reqs), tc.want)
 			}
 			if reqs[0].Header.Get("Idempotency-Key") != "" {
-				t.Error("asset creation carries an Idempotency-Key the server does not honour")
+				t.Error("the plain POST carried an Idempotency-Key")
 			}
 		})
 	}
@@ -329,7 +329,7 @@ func TestErrorEnvelopesAndExitCodes(t *testing.T) {
 		// A read keeps this about parsing; retries are covered above.
 		c := rec.client(staticToken("Bearer k"))
 		c.SetRetryWait(time.Microsecond)
-		_, err := c.CreateAsset(context.Background(), CreateAssetRequest{})
+		err := c.do(context.Background(), call{method: http.MethodPost, path: "/v1/none"}, nil)
 		var apiErr *Error
 		if !errors.As(err, &apiErr) {
 			t.Errorf("status %d: err = %v, want *api.Error", tc.status, err)
@@ -506,23 +506,13 @@ func TestUploadIsOnlyRetriedOn429(t *testing.T) {
 	}
 }
 
-func TestEstimateAndAssets(t *testing.T) {
-	rec := newRecorder(t, func(_ int, w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/v1/pricing/estimate":
-			writeData(w, `{"price":0.35,"currency":"USD","is_pre_deduct":true}`)
-		case r.Method == http.MethodGet && r.URL.Path == "/v1/assets":
-			writeData(w, `{"items":[{"assetId":"a1","assetType":"Image","url":"https://x/a.png","status":"ACTIVE","errorMessage":null,"name":"n"}],"total":1,"page":1,"page_size":20,"total_pages":1}`)
-		case r.Method == http.MethodDelete:
-			writeData(w, `{"deleted":true}`)
-		default:
-			writeData(w, `{"assetId":"a1","assetType":"Image","status":"PROCESSING"}`)
-		}
+func TestEstimateRequest(t *testing.T) {
+	rec := newRecorder(t, func(_ int, w http.ResponseWriter, _ *http.Request) {
+		writeData(w, `{"price":0.35,"currency":"USD","is_pre_deduct":true}`)
 	})
 	c := rec.client(staticToken("Bearer k"))
-	ctx := context.Background()
 
-	est, err := c.EstimateCost(ctx, EstimateRequest{ModelID: "m", Dimensions: map[string]string{"duration": "5"}, HasVideoMaterial: true})
+	est, err := c.EstimateCost(context.Background(), EstimateRequest{ModelID: "m", Dimensions: map[string]string{"duration": "5"}, HasVideoMaterial: true})
 	if err != nil || est.Price != 0.35 || !est.IsPreDeduct {
 		t.Errorf("estimate = %+v, %v", est, err)
 	}
@@ -530,31 +520,6 @@ func TestEstimateAndAssets(t *testing.T) {
 	_ = json.Unmarshal(rec.all()[0].Body, &sent)
 	if sent["model_id"] != "m" || sent["has_video_material"] != true || sent["dimensions"].(map[string]any)["duration"] != "5" {
 		t.Errorf("estimate body = %s", rec.all()[0].Body)
-	}
-
-	list, err := c.ListAssets(ctx, AssetListParams{Type: "Image", Status: "ACTIVE", Page: 2, PageSize: 5})
-	if err != nil || len(list.Items) != 1 || list.Items[0].Ref != "assetId://a1" {
-		t.Errorf("list = %+v, %v", list, err)
-	}
-	if got := rec.all()[1].Path; got != "/v1/assets?page=2&page_size=5&status=ACTIVE&type=Image" {
-		t.Errorf("list path = %s", got)
-	}
-
-	// Both the bare id and the assetId:// reference address the same asset.
-	for _, ref := range []string{"a1", "assetId://a1"} {
-		if _, err := c.GetAsset(ctx, ref); err != nil {
-			t.Fatal(err)
-		}
-		if got := rec.all()[len(rec.all())-1].Path; got != "/v1/assets/a1" {
-			t.Errorf("GetAsset(%q) path = %s", ref, got)
-		}
-	}
-	if err := c.DeleteAsset(ctx, "assetId://a1"); err != nil {
-		t.Fatal(err)
-	}
-	last := rec.all()[len(rec.all())-1]
-	if last.Method != http.MethodDelete || last.Path != "/v1/assets/a1" {
-		t.Errorf("delete = %s %s", last.Method, last.Path)
 	}
 }
 

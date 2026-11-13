@@ -213,9 +213,9 @@ func (rt *runtime) downloadResults(job api.Job, force bool) (api.Job, error) {
 
 	results := make([]api.JobAsset, len(job.Results))
 	var firstErr error
-	for i, asset := range job.Results {
-		results[i] = asset
-		path, err := d.Save(ctx, asset.URL, dir, job.JobID, i+1)
+	for i, res := range job.Results {
+		results[i] = res
+		path, err := d.Save(ctx, res.URL, dir, job.JobID, i+1)
 		if err != nil {
 			if firstErr == nil {
 				firstErr = err

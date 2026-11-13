@@ -267,7 +267,9 @@ func TestStoredCredentialIsNotSentToAnotherHost(t *testing.T) {
 
 	other := newFakeAPI(t)
 	t.Setenv(EnvBaseURL, other.srv.URL)
-	for _, args := range [][]string{{"balance"}, {"image", "x", "-m", "m", "--yes"}, {"assets", "list"}, {"job", "get", "img_1"}} {
+	// balance (authed read), image (generation), job get (authed read of a
+	// specific id): three shapes of credential-requiring command.
+	for _, args := range [][]string{{"balance"}, {"image", "x", "-m", "m", "--yes"}, {"job", "get", "img_1"}} {
 		h.run(args...).wantCode(t, exitcode.Auth)
 	}
 	for _, c := range other.all() {

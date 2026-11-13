@@ -21,7 +21,7 @@ var escapeSeq = regexp.MustCompile(
 )
 
 // Sanitize removes terminal control sequences and control characters from
-// text that came from the server (model names, error messages, asset names)
+// text that came from the server (model names, error messages, job fields)
 // before it is written to a terminal. Newlines and tabs survive. Unicode
 // bidirectional overrides are removed as well, so text cannot visually
 // reorder itself — for example to disguise a file extension.

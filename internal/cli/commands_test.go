@@ -301,7 +301,6 @@ func TestServerStringsAreSanitizedBeforeTheTerminal(t *testing.T) {
 		{"models", "params", "m1"},
 		{"job", "get", "vid_1"},
 		{"job", "wait", "vid_1"},
-		{"assets", "get", "nope\x1b[2J"},
 	} {
 		res := h.run(args...)
 		for name, stream := range map[string]string{"stdout": res.stdout, "stderr": res.stderr} {
@@ -451,86 +450,6 @@ func TestBalance(t *testing.T) {
 	if opened != "http://localhost:3000/console/billing" {
 		t.Errorf("--open opened %q", opened)
 	}
-}
-
-// ---- assets ----
-
-func TestAssetsCreateFromLocalFileAndWait(t *testing.T) {
-	h := newHarness(t)
-	h.useKey()
-	face := h.file("face.png", pngFixture)
-	res := h.run("assets", "create", face, "--name", "lead actor", "--wait", "--json").wantCode(t, exitcode.OK)
-
-	var asset map[string]any
-	res.decode(t, &asset)
-	if asset["assetId"] != "asset_1" || asset["status"] != "ACTIVE" || asset["ref"] != "assetId://asset_1" {
-		t.Errorf("asset = %v", asset)
-	}
-	if ups := h.api.received(); len(ups) != 1 || ups[0].Filename != "face.png" {
-		t.Errorf("uploads = %+v", ups)
-	}
-	var created map[string]any
-	for _, c := range h.api.to("/v1/assets") {
-		if c.Method == "POST" {
-			created = jsonBody(t, c)
-		}
-	}
-	// The type is detected from the file; the URL is the uploaded one.
-	if created["assetType"] != "Image" || created["url"] != "https://cdn.example.test/uploads/1" || created["name"] != "lead actor" {
-		t.Errorf("create body = %v", created)
-	}
-}
-
-func TestAssetsCreateRejectedReviewExitsWith8(t *testing.T) {
-	h := newHarness(t)
-	h.useKey()
-	h.api.assetStatuses = []string{"PROCESSING", "FAILED"}
-	res := h.run("assets", "create", "https://example.com/face.jpg", "--type", "image", "--wait").wantCode(t, exitcode.Validation)
-	if !strings.Contains(res.stderr, "face not detected") {
-		t.Errorf("stderr = %s", res.stderr)
-	}
-	if len(h.api.received()) != 0 {
-		t.Error("a URL source was uploaded")
-	}
-}
-
-func TestAssetsCreateValidation(t *testing.T) {
-	h := newHarness(t)
-	h.useKey()
-	clip := h.file("clip.mp4", mp4Fixture)
-	h.run("assets", "create", "https://example.com/a.jpg").wantCode(t, exitcode.Usage) // URL needs --type
-	h.run("assets", "create", "https://example.com/a.jpg", "--type", "pdf").wantCode(t, exitcode.Usage)
-	h.run("assets", "create", "assetId://asset_1", "--type", "image").wantCode(t, exitcode.Usage)
-	h.run("assets", "create", clip, "--type", "image").wantCode(t, exitcode.Validation)              // content disagrees with --type
-	h.run("assets", "create", h.file("k.png", testutil.PrivateKey)).wantCode(t, exitcode.Validation) // not media
-	if n := len(h.api.all()); n != 0 {
-		t.Errorf("%d requests were sent by rejected commands", n)
-	}
-}
-
-func TestAssetsListGetDelete(t *testing.T) {
-	h := newHarness(t)
-	h.useKey()
-	res := h.run("assets", "list", "--type", "image", "--status", "ACTIVE").wantCode(t, exitcode.OK)
-	if !strings.Contains(res.stdout, "assetId://asset_1") {
-		t.Errorf("list output lacks the reference:\n%s", res.stdout)
-	}
-	q := h.api.to("/v1/assets")[0].Query
-	if q.Get("type") != "Image" || q.Get("status") != "ACTIVE" {
-		t.Errorf("list query = %v", q)
-	}
-	h.run("assets", "list", "--type", "pdf").wantCode(t, exitcode.Usage)
-
-	// The reference form printed by the CLI is accepted back.
-	h.run("assets", "get", "assetId://asset_1").wantCode(t, exitcode.OK)
-	h.run("assets", "get", "missing").wantCode(t, exitcode.NotFound)
-
-	var del map[string]any
-	h.run("assets", "delete", "assetId://asset_1", "--json").wantCode(t, exitcode.OK).decode(t, &del)
-	if del["deleted"] != true || del["assetId"] != "asset_1" {
-		t.Errorf("delete = %v", del)
-	}
-	h.run("assets", "delete", "missing").wantCode(t, exitcode.NotFound)
 }
 
 // ---- config, version, completion, errors ----

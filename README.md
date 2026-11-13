@@ -1,8 +1,8 @@
 # apipod
 
 The command-line client for [APIPod](https://www.apipod.ai): generate images and
-video, estimate what a generation costs, upload reference media and manage
-reviewed assets, from a terminal, a script or an agent.
+video, estimate what a generation costs, and upload reference media, from a
+terminal, a script or an agent.
 
 ```bash
 apipod auth login
@@ -104,10 +104,6 @@ apipod job wait <job-id> -o ./out
 # Upload media and get URLs back
 apipod upload ./photo.png ./clip.mp4 --json
 
-# Submit reference media for review, then use it
-apipod assets create ./face.jpg --name "lead actor" --wait
-apipod video "..." -m <model> -x image_urls='["assetId://<id>"]'
-
 apipod balance
 ```
 
@@ -157,8 +153,6 @@ apipod job wait "$job" -o ./out --json | jq -r '.results[].path'
 | `video [prompt] -m <model> [--image] [--video] [--audio] [--duration] [--resolution] [--aspect] [-x k=v]` | Generate a video |
 | `job get <id>` / `job wait <id> [-o dir] [--timeout]` | Check a job; wait and download |
 | `upload <file>...` | Upload local media, print public URLs |
-| `assets create <file\|url> [--type] [--name] [--wait]` | Submit reference media for review |
-| `assets list` / `get <id>` / `delete <id>` | Manage reviewed assets |
 | `balance [--open]` | Remaining balance; `--open` opens the billing page |
 | `config get` / `set` / `list` | Local settings |
 | `version`, `completion` | Version; shell completion scripts |
@@ -175,7 +169,7 @@ Global flags: `--json`, `--quiet`, `--no-color`, `--debug`, `--no-wait`,
 | 2 | Usage error |
 | 3 | Authentication: not signed in, or the credential was rejected |
 | 4 | Rate limited |
-| 5 | Not found (model, job, asset) |
+| 5 | Not found (model, job) |
 | 6 | Billing: insufficient balance, over `--max-cost`, or spending not confirmed |
 | 7 | Timeout |
 | 8 | Validation: the request or a local file was rejected |
@@ -296,7 +290,7 @@ the server cannot choose a path. Existing files are not overwritten without
 
 ### Terminal output
 
-Text that comes from the server (model names, error messages, asset names) has
+Text that comes from the server (model names, error messages, job fields) has
 ANSI/OSC escape sequences, control characters and bidirectional overrides
 removed before it is printed. `--json` output is escaped by the JSON encoder.
 

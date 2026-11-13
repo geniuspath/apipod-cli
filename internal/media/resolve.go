@@ -8,7 +8,8 @@ import (
 )
 
 // Ref is one media reference given on the command line: either something the
-// server can already fetch (a URL or an assetId:// reference) or a local file.
+// server can already fetch (a URL, or a server-side reference scheme) or
+// a local file.
 type Ref struct {
 	// Remote is the value to send as is; empty for a local file.
 	Remote string

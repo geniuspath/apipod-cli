@@ -79,24 +79,22 @@ type fakeAPI struct {
 	resultURLs     []string
 	modelsJSON     string
 	schemaJSON     string
-	assetStatuses  []string
 	jobError       string
 }
 
 func newFakeAPI(t *testing.T) *fakeAPI {
 	t.Helper()
 	f := &fakeAPI{
-		t:             t,
-		tokens:        map[string]bool{testKey: true},
-		refresh:       map[string]bool{},
-		codes:         map[string]authCode{},
-		failNext:      map[string][]int{},
-		estimate:      0.10,
-		balance:       25,
-		grantScope:    "profile email apipod:api",
-		jobStatuses:   []string{"pending", "processing", "completed"},
-		assetStatuses: []string{"PROCESSING", "ACTIVE"},
-		modelsJSON:    `[]`,
+		t:           t,
+		tokens:      map[string]bool{testKey: true},
+		refresh:     map[string]bool{},
+		codes:       map[string]authCode{},
+		failNext:    map[string][]int{},
+		estimate:    0.10,
+		balance:     25,
+		grantScope:  "profile email apipod:api",
+		jobStatuses: []string{"pending", "processing", "completed"},
+		modelsJSON:  `[]`,
 	}
 	f.srv = httptest.NewServer(http.HandlerFunc(f.serve))
 	t.Cleanup(f.srv.Close)
@@ -209,8 +207,6 @@ func (f *fakeAPI) serveV1(w http.ResponseWriter, r *http.Request, body []byte) {
 		f.ok(w, f.jobStatus(id, false))
 	case path == "/v1/uploads":
 		f.serveUpload(w, r)
-	case strings.HasPrefix(path, "/v1/assets"):
-		f.serveAssets(w, r, body)
 	default:
 		f.fail(w, 404, "", "not found")
 	}
@@ -268,39 +264,6 @@ func (f *fakeAPI) serveUpload(w http.ResponseWriter, r *http.Request) {
 		"content_type": up.ContentType,
 		"bytes":        len(data),
 	})
-}
-
-func (f *fakeAPI) serveAssets(w http.ResponseWriter, r *http.Request, body []byte) {
-	asset := func(status string, src map[string]string) map[string]any {
-		return map[string]any{"assetId": "asset_1", "assetType": src["assetType"], "url": src["url"], "status": status, "errorMessage": nil, "name": src["name"]}
-	}
-	stored := map[string]string{"assetType": "Image", "url": "https://cdn.example.test/uploads/1", "name": "stored"}
-	id := strings.TrimPrefix(strings.TrimPrefix(r.URL.Path, "/v1/assets"), "/")
-	switch {
-	case r.Method == http.MethodPost && id == "":
-		var req map[string]string
-		_ = json.Unmarshal(body, &req)
-		f.ok(w, asset(f.assetStatuses[0], req))
-	case r.Method == http.MethodGet && id == "":
-		f.ok(w, map[string]any{"items": []any{asset("ACTIVE", stored)}, "total": 1, "page": 1, "page_size": 20, "total_pages": 1})
-	case id != "asset_1":
-		f.fail(w, 404, "", "asset not found")
-	case r.Method == http.MethodDelete:
-		f.ok(w, map[string]bool{"deleted": true})
-	default:
-		f.mu.Lock()
-		f.polls++
-		n := f.polls
-		f.mu.Unlock()
-		if n >= len(f.assetStatuses) {
-			n = len(f.assetStatuses) - 1
-		}
-		a := asset(f.assetStatuses[n], stored)
-		if f.assetStatuses[n] == "FAILED" {
-			a["errorMessage"] = "face not detected"
-		}
-		f.ok(w, a)
-	}
 }
 
 func (f *fakeAPI) serveOAuth(w http.ResponseWriter, r *http.Request) {

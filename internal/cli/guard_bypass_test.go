@@ -126,7 +126,6 @@ func TestUsageErrorsNeverEchoArguments(t *testing.T) {
 		{"config", "set", "defaults.output", s},
 		{"config", "set", "spend.confirm_above", s},
 		{"job", s},
-		{"assets", s},
 		{"completion", s},
 		{"help", s},
 		{"help", "auth", s},
@@ -138,9 +137,6 @@ func TestUsageErrorsNeverEchoArguments(t *testing.T) {
 		{"version", s},
 		{"job", "wait", "x", "--timeout", s},
 		{"models", "list", "--category", s},
-		{"assets", "list", "--type", s},
-		{"assets", "create", "https://example.com/a.png", "--type", s},
-		{"assets", "create", "assetId://" + s},
 		{"image", "x", "-m", "m", "-x", s},
 		{"image", "x", "-m", "m", "-x", s + "=1"},
 		{"image", "x", "-m", "m", "-x", "=" + s},
@@ -241,7 +237,7 @@ func TestURLsAreNotSentAsPricingDimensions(t *testing.T) {
 		t.Errorf("a URL was sent as a pricing dimension: %v", dims)
 	}
 	if _, ok := dims["mask"]; ok {
-		t.Errorf("an asset reference was sent as a pricing dimension: %v", dims)
+		t.Errorf("a server-side reference was sent as a pricing dimension: %v", dims)
 	}
 	if dims["duration"] != "5" || dims["style"] != "cinematic" {
 		t.Errorf("dimensions = %v, want the scalar parameters kept", dims)
