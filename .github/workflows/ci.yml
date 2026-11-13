@@ -1,0 +1,106 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only by default; no job in this workflow needs more.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, go ${{ matrix.go }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: [oldstable, stable]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go }}
+      - name: gofmt
+        if: runner.os == 'Linux'
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go mod verify
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+
+  vulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+      # Pinned by version; the Go checksum database verifies the module.
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
+  # Builds every release artifact without publishing anything, then installs
+  # the npm and pip packages and runs the binary from each.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: anchore/sbom-action/download-syft@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+      - name: goreleaser check
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
+        with:
+          version: v2.20.2
+          args: check
+      - name: goreleaser snapshot
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
+        with:
+          version: v2.20.2
+          # Signing needs the release workflow's OIDC identity.
+          args: release --snapshot --clean --skip=sign
+      - name: build npm packages and wheels
+        run: |
+          node scripts/build-npm.mjs
+          python3 scripts/build_wheels.py
+      - name: npm packages have no install scripts
+        run: |
+          if grep -l '"scripts"' npm/dist/*/package.json; then
+            echo "an npm package declares scripts" >&2
+            exit 1
+          fi
+      - name: install from npm packages
+        run: |
+          work="$(mktemp -d)"
+          for pkg in cli-linux-x64 apipod; do
+            (cd "npm/dist/$pkg" && npm pack --silent --pack-destination "$work")
+          done
+          cd "$work"
+          npm init --yes >/dev/null
+          # --ignore-scripts proves nothing has to run at install time. The
+          # other platform packages are not on the registry yet; they are
+          # optional, so npm skips them.
+          npm install --ignore-scripts --no-audit --no-fund ./apipod-cli-linux-x64-*.tgz ./apipod-[0-9]*.tgz
+          ./node_modules/.bin/apipod version
+      - name: install from wheel
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --no-index --no-deps python/dist/*manylinux2014_x86_64*.whl
+          "$RUNNER_TEMP/venv/bin/apipod" version

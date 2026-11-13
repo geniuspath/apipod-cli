@@ -1,0 +1,117 @@
+# GoReleaser configuration for the apipod CLI.
+# Validate with:  goreleaser check
+# Dry run with:   goreleaser release --snapshot --clean --skip=sign,sbom
+#                 (drop --skip when cosign and syft are installed)
+version: 2
+
+project_name: apipod
+
+before:
+  hooks:
+    - go mod verify
+
+builds:
+  - id: apipod
+    main: ./cmd/apipod
+    binary: apipod
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .ShortCommit }}
+      - -X main.date={{ .CommitDate }}
+    # Reproducible builds: timestamps come from the commit, not the clock.
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: apipod
+    ids: [apipod]
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot+{{ .ShortCommit }}"
+
+# One SBOM (SPDX) per archive, generated with syft.
+sboms:
+  - id: archive
+    artifacts: archive
+
+# Keyless signing of the checksum file: the signature covers every archive
+# through its SHA-256. Verified with `cosign verify-blob` (see README).
+signs:
+  - id: cosign
+    cmd: cosign
+    artifacts: checksum
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - --bundle=${signature}
+      - ${artifact}
+      - --yes
+    output: true
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+
+release:
+  github:
+    owner: geniuspath
+    name: apipod-cli
+  prerelease: auto
+
+# Homebrew cask pushed to the tap (geniuspath/homebrew-tap). The cask pins the
+# sha256 of each archive. Without HOMEBREW_TAP_TOKEN the cask is only written
+# to dist/ and nothing is pushed.
+homebrew_casks:
+  - name: apipod
+    ids: [apipod]
+    binaries: [apipod]
+    repository:
+      owner: geniuspath
+      name: homebrew-tap
+      token: '{{ envOrDefault "HOMEBREW_TAP_TOKEN" "" }}'
+    directory: Casks
+    homepage: https://www.apipod.ai
+    description: Generate images and video with APIPod from the terminal
+    license: MIT
+    skip_upload: '{{ if isEnvSet "HOMEBREW_TAP_TOKEN" }}auto{{ else }}true{{ end }}'
+    commit_author:
+      name: apipod-release-bot
+      email: release@apipod.ai
+    # Homebrew's :cobra format runs `apipod completion <shell>` itself, so no
+    # extra args are given here.
+    generate_completions_from_executable:
+      shell_parameter_format: cobra
+      shells: [bash, zsh, fish]
+    # The binaries are not notarized by Apple. Homebrew downloads them over
+    # https and checks the sha256 above, so the quarantine attribute is
+    # cleared after that verification rather than asking users to do it.
+    hooks:
+      post:
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/apipod"]
+          end

@@ -1,0 +1,40 @@
+{
+  "name": "apipod",
+  "version": "0.0.0",
+  "description": "Generate images and video with APIPod from the terminal",
+  "homepage": "https://www.apipod.ai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/geniuspath/apipod-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/geniuspath/apipod-cli/issues"
+  },
+  "license": "MIT",
+  "bin": {
+    "apipod": "bin/apipod.js"
+  },
+  "files": [
+    "bin/apipod.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "apipod",
+    "cli",
+    "ai",
+    "image-generation",
+    "video-generation"
+  ],
+  "optionalDependencies": {
+    "@apipod/cli-darwin-arm64": "0.0.0",
+    "@apipod/cli-darwin-x64": "0.0.0",
+    "@apipod/cli-linux-arm64": "0.0.0",
+    "@apipod/cli-linux-x64": "0.0.0",
+    "@apipod/cli-win32-arm64": "0.0.0",
+    "@apipod/cli-win32-x64": "0.0.0"
+  }
+}

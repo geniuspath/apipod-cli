@@ -1,0 +1,17 @@
+/dist/
+/apipod
+/apipod.exe
+*.test
+*.out
+coverage.*
+
+# packaging staging areas (built by scripts/build-npm.mjs and scripts/build_wheels.py)
+/npm/dist/
+/python/dist/
+node_modules/
+__pycache__/
+*.pyc
+
+.DS_Store
+.env
+.env.*
