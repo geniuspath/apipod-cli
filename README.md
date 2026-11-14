@@ -1,5 +1,7 @@
 # apipod
 
+[简体中文](README.zh-CN.md)
+
 The command-line client for [APIPod](https://www.apipod.ai): generate images and
 video, estimate what a generation costs, and upload reference media, from a
 terminal, a script or an agent.
