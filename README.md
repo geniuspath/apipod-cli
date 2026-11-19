@@ -5,9 +5,8 @@
 The command-line client for [APIPod](https://www.apipod.ai), one API for
 [AI image generation](https://www.apipod.ai/images) and
 [AI video generation](https://www.apipod.ai/videos) with models such as
-[Seedance](https://www.apipod.ai/seedance-2.5),
-[Seedream](https://www.apipod.ai/seedream-5.5) and
-[Kling](https://www.apipod.ai/kling-3.0): generate those models' output,
+[Seedance 2.0](https://www.apipod.ai/seedance-2.0),
+[Seedance 2.5](https://www.apipod.ai/seedance-2.5): generate those models' output,
 estimate what a generation costs, and upload reference media, from a terminal,
 a script or an agent.
 

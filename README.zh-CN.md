@@ -5,9 +5,8 @@
 [APIPod](https://www.apipod.ai) 的命令行客户端。APIPod 用一套 API 提供
 [AI 图片生成](https://www.apipod.ai/zh-CN/images)和
 [AI 视频生成](https://www.apipod.ai/zh-CN/videos)，覆盖
-[Seedance](https://www.apipod.ai/zh-CN/seedance-2.5)、
-[Seedream](https://www.apipod.ai/zh-CN/seedream-5.5)、
-[Kling](https://www.apipod.ai/zh-CN/kling-3.0)等模型；本工具让你在终端、脚本或 agent 里调用这些模型、预估一次生成的花费、上传参考素材。
+[Seedance 2.0](https://www.apipod.ai/seedance-2.0),
+[Seedance 2.5](https://www.apipod.ai/seedance-2.5) 等模型；本工具让你在终端、脚本或 agent 里调用这些模型、预估一次生成的花费、上传参考素材。
 
 如果你是在 Claude、ChatGPT 这类 MCP 宿主里对话式地使用 APIPod，请继续用官方远程 MCP，见 [Agent 与 MCP 集成](https://www.apipod.ai/zh-CN/agent)；`apipod` CLI 面向的是终端、脚本、CI，以及只会跑 shell、没有 MCP 能力的 agent。
 
