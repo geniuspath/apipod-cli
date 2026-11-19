@@ -2,9 +2,14 @@
 
 [简体中文](README.zh-CN.md)
 
-The command-line client for [APIPod](https://www.apipod.ai): generate images and
-video, estimate what a generation costs, and upload reference media, from a
-terminal, a script or an agent.
+The command-line client for [APIPod](https://www.apipod.ai), one API for
+[AI image generation](https://www.apipod.ai/images) and
+[AI video generation](https://www.apipod.ai/videos) with models such as
+[Seedance](https://www.apipod.ai/seedance-2.5),
+[Seedream](https://www.apipod.ai/seedream-5.5) and
+[Kling](https://www.apipod.ai/kling-3.0): generate those models' output,
+estimate what a generation costs, and upload reference media, from a terminal,
+a script or an agent.
 
 ```bash
 apipod auth login
@@ -14,6 +19,10 @@ apipod image "a red fox in the snow" -m <model> --aspect 16:9 -o ./out
 Every command works for people (tables, progress on stderr) and for programs:
 add `--json` for one JSON document on stdout, and branch on the
 [exit code](#exit-codes).
+
+Chat hosts that speak MCP use the official remote server instead; see
+[APIPod for agents](https://www.apipod.ai/agent). This CLI is for terminals,
+scripts, CI, and agents that only run shell commands.
 
 ## Install
 
@@ -62,7 +71,8 @@ stores the resulting tokens in the system keychain. On a machine without a
 browser, the sign-in URL is printed so you can open it elsewhere; the browser
 must be able to reach `127.0.0.1` on the machine running the CLI.
 
-To use an API key instead:
+To use an API key instead, create one in the
+[APIPod console](https://www.apipod.ai/console/api-keys):
 
 ```bash
 export APIPOD_API_KEY=...        # for scripts and CI
@@ -80,6 +90,10 @@ apipod auth logout   # revokes the tokens, then removes them from this machine
 `APIPOD_API_KEY` takes precedence over a stored credential.
 
 ## Examples
+
+Browse the [model catalog](https://www.apipod.ai/models) to pick an id, and
+the [pricing page](https://www.apipod.ai/pricing) to see how each model is
+charged; `apipod cost` quotes a specific request.
 
 ```bash
 # Find a model and see what it accepts
@@ -108,6 +122,9 @@ apipod upload ./photo.png ./clip.mp4 --json
 
 apipod balance
 ```
+
+`apipod balance --open` opens the
+[billing page](https://www.apipod.ai/console/billing), where funds are added.
 
 ### Model parameters
 
@@ -357,6 +374,14 @@ Drop `--skip=sign,sbom` when `cosign` and `syft` are installed. Then
 `node scripts/build-npm.mjs` and `python3 scripts/build_wheels.py` assemble the
 npm packages and wheels from `dist/`; see [npm/README.md](npm/README.md) and
 [python/README.md](python/README.md).
+
+## Links
+
+- [APIPod](https://www.apipod.ai) — the platform this client talks to
+- [Model catalog](https://www.apipod.ai/models) and [pricing](https://www.apipod.ai/pricing)
+- [API documentation](https://docs.apipod.ai/introduction)
+- [APIPod for agents](https://www.apipod.ai/agent) — the remote MCP server
+- [Changelog](https://www.apipod.ai/changelog)
 
 ## License
 

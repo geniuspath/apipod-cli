@@ -2,9 +2,14 @@
 
 [English](README.md)
 
-[APIPod](https://www.apipod.ai) 的命令行客户端：在终端、脚本或 agent 里生成图片和视频、预估一次生成的花费、上传参考素材。
+[APIPod](https://www.apipod.ai) 的命令行客户端。APIPod 用一套 API 提供
+[AI 图片生成](https://www.apipod.ai/zh-CN/images)和
+[AI 视频生成](https://www.apipod.ai/zh-CN/videos)，覆盖
+[Seedance](https://www.apipod.ai/zh-CN/seedance-2.5)、
+[Seedream](https://www.apipod.ai/zh-CN/seedream-5.5)、
+[Kling](https://www.apipod.ai/zh-CN/kling-3.0)等模型；本工具让你在终端、脚本或 agent 里调用这些模型、预估一次生成的花费、上传参考素材。
 
-如果你是在 Claude、ChatGPT 这类 MCP 宿主里对话式地使用 APIPod，请继续用官方远程 MCP（`/mcp`）；`apipod` CLI 面向的是终端、脚本、CI，以及只会跑 shell、没有 MCP 能力的 agent。
+如果你是在 Claude、ChatGPT 这类 MCP 宿主里对话式地使用 APIPod，请继续用官方远程 MCP，见 [Agent 与 MCP 集成](https://www.apipod.ai/zh-CN/agent)；`apipod` CLI 面向的是终端、脚本、CI，以及只会跑 shell、没有 MCP 能力的 agent。
 
 ```bash
 apipod auth login
@@ -47,7 +52,7 @@ apipod auth login
 
 默认走浏览器：打开浏览器、请你批准「APIPod CLI」这个应用，然后把拿到的 token 存进系统钥匙串。在没有浏览器的机器上会打印登录 URL，你可以到别处打开；浏览器必须能访问运行 CLI 的那台机器的 `127.0.0.1`。
 
-改用 API key：
+改用 API key，可以在 [APIPod 控制台](https://www.apipod.ai/zh-CN/console/api-keys)创建：
 
 ```bash
 export APIPOD_API_KEY=...        # 给脚本和 CI 用
@@ -64,6 +69,8 @@ apipod auth logout   # 先在服务端吊销 token，再从本机删除
 `APIPOD_API_KEY` 的优先级高于已存储的凭证。
 
 ## 示例
+
+在[模型目录](https://www.apipod.ai/zh-CN/models)里挑模型 id，在[定价页](https://www.apipod.ai/zh-CN/pricing)查看各模型的计价方式；具体某次请求的价格用 `apipod cost` 询价。
 
 ```bash
 # 挑一个模型，看看它接受哪些参数
@@ -92,6 +99,8 @@ apipod upload ./photo.png ./clip.mp4 --json
 
 apipod balance
 ```
+
+`apipod balance --open` 直接打开[充值页面](https://www.apipod.ai/zh-CN/console/billing)。
 
 ### 模型参数
 
@@ -271,6 +280,14 @@ goreleaser release --snapshot --clean --skip=sign,sbom
 ```
 
 装好 `cosign` 和 `syft` 后去掉 `--skip=sign,sbom`。之后用 `node scripts/build-npm.mjs` 和 `python3 scripts/build_wheels.py` 从 `dist/` 组装 npm 包和 wheel；见 [npm/README.md](npm/README.md) 与 [python/README.md](python/README.md)。
+
+## 相关链接
+
+- [APIPod 官网](https://www.apipod.ai/zh-CN)：本客户端对接的平台
+- [模型目录](https://www.apipod.ai/zh-CN/models)与[定价](https://www.apipod.ai/zh-CN/pricing)
+- [API 文档](https://docs.apipod.ai/zh-CN/introduction)
+- [Agent 与 MCP 集成](https://www.apipod.ai/zh-CN/agent)：官方远程 MCP
+- [更新日志](https://www.apipod.ai/zh-CN/changelog)
 
 ## 许可证
 
